@@ -1,0 +1,479 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model tagtoticket {
+  A String
+  B String
+
+  @@unique([A, B], map: "_TagToTicket_AB_unique")
+  @@index([B], map: "_TagToTicket_B_index")
+  @@map("_tagtoticket")
+}
+
+model action {
+  id           String      @id
+  name         String
+  type         action_type
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime
+  automationId String
+  order        Int
+  laneId       String      @default("0")
+
+  @@index([automationId], map: "Action_automationId_idx")
+}
+
+model addons {
+  id        String   @id
+  name      String
+  agencyId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  active    Boolean  @default(false)
+  priceId   String   @unique(map: "AddOns_priceId_key")
+
+  @@index([agencyId], map: "AddOns_agencyId_idx")
+}
+
+model agency {
+  id                 String   @id
+  connectedAccountId String?  @default("")
+  customerId         String   @default("")
+  name               String
+  agencyLogo         String   @db.Text
+  companyEmail       String   @db.Text
+  companyPhone       String
+  whiteLabel         Boolean  @default(true)
+  address            String
+  city               String
+  zipCode            String
+  state              String
+  country            String
+  goal               Int      @default(5)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime
+  users              user[]
+  sidebarOptions     agencysidebaroption[]
+  subscription       subscription?
+  subaccounts        subaccount[]
+  notification       notification[]
+
+  invitation invitation[]
+}
+
+model agencysidebaroption {
+  id        String                   @id
+  name      String                   @default("Menu")
+  link      String                   @default("#")
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime
+  icon      agencysidebaroption_icon @default(info)
+  agencyId  String
+  agency    agency                   @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId], map: "AgencySidebarOption_agencyId_idx")
+}
+
+model automation {
+  id           String   @id
+  name         String
+  triggerId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  subAccountId String
+  published    Boolean
+
+  @@index([subAccountId], map: "Automation_subAccountId_idx")
+  @@index([triggerId], map: "Automation_triggerId_idx")
+}
+
+model automationinstance {
+  id           String   @id
+  automationId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  active       Boolean  @default(false)
+
+  @@index([automationId], map: "AutomationInstance_automationId_idx")
+}
+
+model classname {
+  id         String   @id
+  name       String
+  customData String?  @db.LongText
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  color      String
+  funnelId   String
+
+  @@index([funnelId], map: "ClassName_funnelId_idx")
+}
+
+model contact {
+  id           String   @id
+  name         String
+  email        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  subAccountId String
+
+  @@index([subAccountId], map: "Contact_subAccountId_idx")
+  ticket ticket[]
+}
+
+model funnel {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  subAccountId  String
+  published     Boolean  @default(false)
+  subDomainName String?  @unique(map: "Funnel_subDomainName_key")
+  favicon       String?  @db.Text
+  liveProducts  String?  @default("[]")
+  pages         funnelpage[]
+
+  @@index([subAccountId], map: "Funnel_subAccountId_idx")
+}
+
+model funnelpage {
+  id           String   @id
+  name         String
+  content      String?  @db.LongText
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  pathname     String   @default("")
+  visits       Int      @default(0)
+  order        Int
+  previewImage String?  @db.Text
+  funnelId     String
+
+  @@index([funnelId], map: "FunnelPage_funnelId_idx")
+  funnel funnel[]
+}
+
+model invitation {
+  id       String            @id
+  email    String            @unique(map: "Invitation_email_key")
+  status   invitation_status @default(PENDING)
+  role     invitation_role   @default(SUBACCOUNT_USER)
+  agencyId String
+  subAccountId String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime?         @updatedAt
+  agency   agency            @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId], map: "Invitation_agencyId_idx")
+}
+
+model lane {
+  id         String   @id
+  name       String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  pipelineId String
+  ticket     ticket[]
+  pipeline   pipeline[]
+
+  @@index([pipelineId], map: "Lane_pipelineId_idx")
+  
+}
+
+model media {
+  id           String   @id
+  name         String
+  type         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  subAccountId String
+  link         String   @unique(map: "Media_link_key")
+  subaccount    subaccount? @relation(fields: [subAccountId], references: [id])
+
+  @@index([subAccountId], map: "Media_subAccountId_idx")
+}
+
+model userPermission{
+  userId        String
+  permissionId  String
+  user          user        @relation(fields: [userId], references: [id], onDelete: Cascade) 
+  permission    permissions @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@id([userId, permissionId])
+  @@map("_userpermission")
+  @@index([permissionId])
+  @@index([userId])
+}
+
+model notification {
+  id           String   @id @default(uuid())
+  notification String
+  subAccountId String?
+  userId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+  agencyId     String
+  user         user     @relation(fields: [userId], references: [id], name: "UserNotifications")
+  agency       agency   @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId], map: "Notification_agencyId_idx")
+  @@index([subAccountId], map: "Notification_subAccountId_idx")
+  @@index([userId], map: "Notification_userId_idx")
+}
+
+model permissions {
+  id           String   @id @default(uuid())
+  email        String
+  subAccountId String
+  access       Boolean
+  users        userPermission[]
+  subaccount   subaccount @relation(fields: [subAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([email, subAccountId], name: "email_subAccountId")
+
+  @@index([email], map: "Permissions_email_idx")
+  @@index([subAccountId], map: "Permissions_subAccountId_idx")
+  
+}
+
+model pipeline {
+  id           String   @id @default(uuid())
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  subAccountId String
+  lanes        lane[]
+  subaccount   subaccount @relation(fields: [subAccountId], references: [id])
+
+  @@index([subAccountId], map: "Pipeline_subAccountId_idx")
+  
+}
+
+model subaccount {
+  id                 String   @id
+  connectedAccountId String?  @default("")
+  name               String
+  subAccountLogo     String   @db.Text
+  companyEmail       String   @db.Text
+  companyPhone       String
+  address            String
+  city               String
+  zipCode            String
+  state              String
+  country            String
+  goal               Int      @default(5)
+  agencyId           String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime
+  agency             agency   @relation(fields: [agencyId], references: [id])
+  sidebarOptions     subaccountsidebaroption[]
+  Permissions        permissions[]
+  pipelines         pipeline[]
+  tags              tag[]
+
+  @@index([agencyId], map: "SubAccount_agencyId_idx")
+  media media[]
+}
+
+model subaccountsidebaroption {
+  id           String                       @id
+  name         String                       @default("Menu")
+  link         String                       @default("#")
+  createdAt    DateTime                     @default(now())
+  updatedAt    DateTime
+  icon         subaccountsidebaroption_icon @default(info)
+  subAccountId String?
+  subaccount    subaccount? @relation(fields: [subAccountId], references: [id])
+
+  @@index([subAccountId], map: "SubAccountSidebarOption_subAccountId_idx")
+}
+
+model subscription {
+  id                   String             @id
+  plan                 subscription_plan?
+  price                String?            @db.LongText
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime
+  priceId              String
+  customerId           String
+  currentPeriodEndDate DateTime
+  active               Boolean            @default(true)
+  subscriptionId       String             @unique(map: "Subscription_subscriptionId_key")
+  agencyId             String?            @unique(map: "Subscription_agencyId_key")
+  agency               agency?            @relation(fields: [agencyId], references: [id])
+
+  @@index([customerId])
+}
+
+model tag {
+  id           String   @id
+  name         String
+  color        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  subAccountId String
+
+  @@index([subAccountId], map: "Tag_subAccountId_idx")
+  ticket ticket[] @relation("TicketTags")
+  subaccount subaccount[]
+}
+
+model ticket {
+  id             String   @id
+  name           String
+  laneId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+  order          Int      @default(0)
+  value          Decimal?
+  description    String?
+  customerId     String?
+  assignedUserId String?
+  lane           lane?    @relation(fields: [laneId], references: [id])
+  customer       contact? @relation(fields: [customerId], references: [id])
+  assigned       user?    @relation(fields: [assignedUserId], references: [id])
+  tags           tag[]    @relation("TicketTags")
+
+  @@index([assignedUserId], map: "Ticket_assignedUserId_idx")
+  @@index([customerId], map: "Ticket_customerId_idx")
+  @@index([laneId], map: "Ticket_laneId_idx")
+}
+
+model trigger {
+  id           String       @id
+  name         String
+  type         trigger_type
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime
+  subAccountId String
+
+  @@index([subAccountId], map: "Trigger_subAccountId_idx")
+}
+
+model user {
+  id            String             @id @default(uuid())
+  name          String
+  avatarUrl     String             @db.Text
+  email         String             @unique(map: "User_email_key")
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  role          user_role          @default(SUBACCOUNT_USER)
+  agencyId      String?
+  agency        agency?            @relation(fields: [agencyId], references: [id])
+  notifications notification[]     @relation("UserNotifications")
+  permissions  userPermission[]    
+  ticket       ticket[]
+
+  @@index([agencyId], map: "User_agencyId_idx")
+}
+
+enum subscription_plan {
+  price_10Mhu0Ild5Bk5htqogRZXP2e
+  price_10MhtcIld5Bk5htqx5CvF5mj
+}
+
+enum action_type {
+  CREATE_CONTACT
+}
+
+enum invitation_status {
+  ACCEPTED
+  REVOKED
+  PENDING
+}
+
+enum trigger_type {
+  CONTACT_FORM
+}
+
+enum invitation_role {
+  AGENCY_OWNER
+  AGENCY_ADMIN
+  SUBACCOUNT_USER
+  SUBACCOUNT_GUEST
+}
+
+enum agencysidebaroption_icon {
+  settings
+  chart
+  calendar
+  check
+  chip
+  compass
+  DATABASE_URLflag
+  home
+  info
+  link
+  lock
+  messages
+  notification
+  payment
+  power
+  receipt
+  shield
+  star
+  tune
+  videorecorder
+  wallet
+  warning
+  headphone
+  send
+  pipelines
+  person
+  category
+  contact
+  clipboardIcon
+  media
+  database
+  flag
+}
+
+enum subaccountsidebaroption_icon {
+  settings
+  chart
+  calendar
+  check
+  chip
+  compass
+  DATABASE_URLflag
+  home
+  info
+  link
+  lock
+  messages
+  notification
+  payment
+  power
+  receipt
+  shield
+  star
+  tune
+  videorecorder
+  wallet
+  warning
+  headphone
+  send
+  pipelines
+  person
+  category
+  contact
+  clipboardIcon
+  database
+  flag
+}
+
+enum user_role {
+  AGENCY_OWNER
+  AGENCY_ADMIN
+  SUBACCOUNT_USER
+  SUBACCOUNT_GUEST
+}
