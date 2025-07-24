@@ -37,10 +37,10 @@
 # Screenshots of Running Project
 
 ### Landing Page Light Version SS
-![site-light](https://github.com/dipanshiTyagi/MorphoWeb/blob/main/public/assets/site-light.jpeg)
+![site-light](https://github.com/dipanshiTyagi/MorphoWeb/blob/main/MorphoWeb/public/assets/site-light.jpeg)
 
 ### Landing Page Dark Version SS
-![site-dark](https://github.com/dipanshiTyagi/MorphoWeb/blob/main/public/assets/site-dark.jpeg)
+![site-dark](https://github.com/dipanshiTyagi/MorphoWeb/blob/main/MorphoWeb/public/assets/site-dark.jpeg)
 
 ## Agency Dashboard Pages
 ### Dashboard
